@@ -49,6 +49,9 @@ const GalleryScreen: React.FC<Props> = ({ navigation }) => {
   }, [])
 
   return (
+    <View>
+      <Text>heyy</Text>
+    </View>
     <View style={styles.wrapperClass}>
       <Header title="Art Gallery" />
       <View style={styles.container}>
