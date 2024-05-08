@@ -1,52 +1,70 @@
-// GalleryScreen.tsx
-import React, { useEffect, useState } from 'react';
-import { View, Text, FlatList, Image, TouchableOpacity, ActivityIndicator, StyleSheet, ImageBackground } from 'react-native';
-import Header from '../components/Header'
-import axios from 'axios';
-import { NavigationProp } from '@react-navigation/native';
+import React, {useEffect, useState} from 'react';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+  ImageBackground,
+} from 'react-native';
+import Header from '../components/Header';
+import {NavigationProp} from '@react-navigation/native';
+import {fetchArtworks} from '../apiService';
 
-
-type Props = {
-  navigation: NavigationProp<any>; // Replace 'any' with the appropriate navigation type
+type Artwork = {
+  id: string;
+  title: string;
+  objectNumber: string;
+  webImage: any;
 };
 
-const GalleryScreen: React.FC<Props> = ({ navigation }) => {
-  const [artworks, setArtworks] = useState();
-  const [error, setError] = useState('');
+type Props = {
+  navigation: NavigationProp<any>;
+};
 
+const GalleryScreen: React.FC<Props> = ({navigation}) => {
+  const [artworks, setArtworks] = useState<Artwork[]>([]);
+  const [error, setError] = useState<string>('');
+
+  // API call
+  useEffect(() => {
+    const loadArtworks = async () => {
+      try {
+        const fetchedArtworks = await fetchArtworks();
+        setArtworks(fetchedArtworks);
+      } catch (error) {
+        setError('Something went wrong');
+      }
+    };
+    loadArtworks();
+  }, []);
 
   // if there is any error in data fetching
   if (error) {
     return (
-      <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+      <View style={styles.errorContainer}>
         <Text>{error}</Text>
       </View>
     );
   }
 
-
-  const API_BASE_URL = 'https://www.rijksmuseum.nl/api/en';
-  const API_KEY = 'QHrIvcLh'; // Obtain your API key from Rijksmuseum API website
-
-  // API call
-  const getData = async () => {
-    try {
-      const response = await axios.get(`${API_BASE_URL}/collection`, {
-        params: {
-          key: API_KEY,
-          format: 'json',
-          type: 'painting',
-        },
-      });
-      setArtworks(response.data.artObjects);
-    } catch (error) {
-      setError('Somthing went wrong')
-    }
-  }
-
-  useEffect(() => {
-    getData();
-  }, [])
+  const renderItem = ({item}: {item: Artwork}) => (
+    <TouchableOpacity
+      style={styles.artworkContainer}
+      onPress={() =>
+        navigation.navigate('ArtworkDetail', {
+          artworkId: item,
+        })
+      }>
+      <View style={styles.imageWrapper}>
+        <ImageBackground source={{uri: item.webImage.url}} style={styles.image}>
+          <View style={styles.textWrapper}>
+            <Text style={styles.title}>{item.title}</Text>
+          </View>
+        </ImageBackground>
+      </View>
+    </TouchableOpacity>
+  );
 
   return (
     <View style={styles.wrapperClass}>
@@ -56,31 +74,25 @@ const GalleryScreen: React.FC<Props> = ({ navigation }) => {
         <View style={styles.card}>
           <FlatList
             data={artworks}
-            keyExtractor={(item) => item.id}
+            keyExtractor={item => item.id}
             numColumns={2}
-            renderItem={({ item }) => (
-              <TouchableOpacity style={styles.wrapperClass}
-                onPress={() => navigation.navigate('ArtworkDetail', { artworkId: item })}>
-                <View style={styles.imageWrapper} >
-                  <ImageBackground source={{ uri: item.webImage.url }} style={styles.image} >
-                    <View style={styles.textWrapper}>
-                      <Text style={styles.title}>{item.title}</Text>
-                    </View>
-                  </ImageBackground>
-                </View>
-              </TouchableOpacity>
-            )}
+            renderItem={renderItem}
           />
         </View>
       </View>
     </View>
-  )
-}
+  );
+};
 
 //css
 const styles = StyleSheet.create({
-  wrapperClass : {
-    flex:1
+  wrapperClass: {
+    flex: 1,
+  },
+  errorContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   container: {
     flex: 1,
@@ -89,17 +101,21 @@ const styles = StyleSheet.create({
     borderTopEndRadius: 50,
     borderTopLeftRadius: 50,
   },
+  artworkContainer: {
+    flex: 1,
+    margin: 5,
+  },
   containerText: {
     alignSelf: 'flex-start',
     fontSize: 18,
     fontWeight: '700',
     marginTop: 25,
     marginStart: 23,
-    color: 'black'
+    color: 'black',
   },
   card: {
     flex: 1,
-    marginTop: '3%'
+    marginTop: '3%',
   },
   imageWrapper: {
     flex: 1,
@@ -109,7 +125,7 @@ const styles = StyleSheet.create({
   },
   shadowProp: {
     shadowColor: '#171717',
-    shadowOffset: { width: -2, height: 4 },
+    shadowOffset: {width: -2, height: 4},
     shadowOpacity: 0.2,
     shadowRadius: 3,
   },
@@ -117,20 +133,20 @@ const styles = StyleSheet.create({
     width: '100%',
     height: 200,
     borderRadius: 10,
-    overflow: "hidden",
+    overflow: 'hidden',
     flex: 1,
   },
   textWrapper: {
     flex: 1,
     padding: 5,
     alignContent: 'center',
-    justifyContent : "flex-end",
+    justifyContent: 'flex-end',
   },
   title: {
     padding: 2,
     margin: 2,
     color: 'white',
     textAlignVertical: 'bottom',
-  }
-})
+  },
+});
 export default GalleryScreen;
